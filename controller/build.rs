@@ -8,6 +8,8 @@ use std::{
 };
 
 use chrono::Utc;
+
+#[cfg(windows)]
 use winres::WindowsResource;
 
 const APP_MANIFEST: &'static str = r#"
@@ -56,6 +58,7 @@ fn main() -> io::Result<()> {
         println!("cargo:rustc-env=BUILD_TIME={}", build_time);
     }
 
+    #[cfg(windows)]
     {
         let mut resource = WindowsResource::new();
         resource.set_icon("./resources/app-icon.ico");

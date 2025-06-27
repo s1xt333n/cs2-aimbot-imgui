@@ -47,6 +47,22 @@ pub use grenade_helper::*;
 
 pub mod sniper_crosshair;
 
+// New enhanced modules
+mod aimbot;
+pub use aimbot::*;
+
+mod triggerbot;
+pub use triggerbot::*;
+
+mod esp_advanced;
+pub use esp_advanced::*;
+
+mod bhop;
+pub use bhop::*;
+
+mod misc;
+pub use misc::*;
+
 use utils_state::StateRegistry;
 
 use crate::UpdateContext;

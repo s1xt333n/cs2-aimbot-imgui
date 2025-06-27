@@ -54,10 +54,17 @@ impl OverlayTarget {
         Ok(match self {
             Self::Window(hwnd) => *hwnd,
             Self::WindowTitle(title) => unsafe {
-                FindWindowW(
-                    PCWSTR::null(),
-                    PCWSTR::from_raw(util::to_wide_chars(title).as_ptr()),
-                )
+                #[cfg(windows)]
+                {
+                    FindWindowW(
+                        PCWSTR::null(),
+                        PCWSTR::from_raw(util::to_wide_chars(title).as_ptr()),
+                    )
+                }
+                #[cfg(not(windows))]
+                {
+                    HWND::default()
+                }
             },
             Self::WindowOfProcess(process_id) => {
                 const MAX_ITERATIONS: usize = 1_000_000;
