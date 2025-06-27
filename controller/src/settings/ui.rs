@@ -55,6 +55,8 @@ use crate::{
     enhancements::StateGrenadeHelperPlayerLocation,
     settings::{
         AppSettings,
+        AimbotConfig,
+        AimbotProfile,
         EspBoxType,
         EspHeadDot,
         EspHealthBar,
@@ -345,6 +347,14 @@ impl SettingsUI {
                         }
 
                         ui.checkbox("Simple Recoil Helper", &mut settings.aim_assist_recoil);
+                    }
+
+                    if let Some(_) = ui.tab_item("Advanced Aimbot") {
+                        self.render_advanced_aimbot_settings(&mut settings.aimbot_config, ui);
+                    }
+
+                    if let Some(_) = ui.tab_item("Misc Features") {
+                        self.render_misc_features_settings(ui);
                     }
 
                     if let Some(_) = ui.tab_item("Web Radar") {
@@ -1922,5 +1932,309 @@ impl SettingsUI {
                 }
             }
         }
+    }
+
+    /// Renders the advanced aimbot settings
+    fn render_advanced_aimbot_settings(&mut self, aimbot_config: &mut AimbotConfig, ui: &imgui::Ui) {
+        use crate::ui::{ModernTheme, ModernUI, ButtonType};
+        
+        let theme = ModernTheme::new();
+        
+        // Core Settings Section
+        if theme.styled_collapsing_header(ui, "Core Settings", true) {
+            ui.checkbox("Enable Aimbot", &mut aimbot_config.enabled);
+            
+            if aimbot_config.enabled {
+                ui.set_next_item_width(150.0);
+                ui.combo_enum("Toggle Mode", &[
+                    (KeyToggleMode::Off, "Always Off"),
+                    (KeyToggleMode::Hold, "Hold Key"),
+                    (KeyToggleMode::Toggle, "Toggle"),
+                    (KeyToggleMode::AlwaysOn, "Always On"),
+                ], &mut aimbot_config.toggle_mode);
+                
+                // Hotkey configuration would go here
+                ui.text("Hotkey: [Configure in Hotkeys tab]");
+                
+                ui.separator();
+                
+                // FOV and Distance
+                ui.text("FOV:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##fov", 0.1, 180.0)
+                    .display_format("%.1f°")
+                    .build(&mut aimbot_config.fov);
+                
+                ui.text("Max Distance:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##max_distance", 100.0, 10000.0)
+                    .display_format("%.0f units")
+                    .build(&mut aimbot_config.max_distance);
+                
+                ui.checkbox("Visible Only", &mut aimbot_config.visible_only);
+                ui.checkbox("Team Check", &mut aimbot_config.team_check);
+                ui.checkbox("Prefer Head", &mut aimbot_config.prefer_head);
+            }
+        }
+        
+        if aimbot_config.enabled && theme.styled_collapsing_header(ui, "Smoothing & Movement", false) {
+            ui.checkbox("Enable Smoothing", &mut aimbot_config.smooth_enabled);
+            
+            if aimbot_config.smooth_enabled {
+                ui.text("Smooth Factor:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##smooth_factor", 0.1, 10.0)
+                    .display_format("%.1f")
+                    .build(&mut aimbot_config.smooth_factor);
+                
+                ui.text("Max Speed:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##max_speed", 100.0, 5000.0)
+                    .display_format("%.0f px/s")
+                    .build(&mut aimbot_config.max_smooth_speed);
+                
+                // Smoothing type selection
+                ui.set_next_item_width(150.0);
+                ui.combo_enum("Smoothing Type", &[
+                    (crate::math::smoothing::SmoothingType::Linear, "Linear"),
+                    (crate::math::smoothing::SmoothingType::Exponential, "Exponential"),
+                    (crate::math::smoothing::SmoothingType::Bezier, "Bezier"),
+                    (crate::math::smoothing::SmoothingType::Natural, "Natural"),
+                    (crate::math::smoothing::SmoothingType::Humanized, "Humanized"),
+                ], &mut aimbot_config.smoothing_type);
+            }
+        }
+        
+        if aimbot_config.enabled && theme.styled_collapsing_header(ui, "Prediction & Targeting", false) {
+            ui.checkbox("Enable Prediction", &mut aimbot_config.prediction_enabled);
+            
+            if aimbot_config.prediction_enabled {
+                ui.text("Prediction Factor:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##prediction_factor", 0.1, 3.0)
+                    .display_format("%.1fx")
+                    .build(&mut aimbot_config.prediction_factor);
+                
+                ui.checkbox("Gravity Compensation", &mut aimbot_config.gravity_compensation);
+            }
+            
+            ui.separator();
+            ui.text("Target Priority Weights:");
+            
+            ui.text("FOV Weight:");
+            ui.same_line();
+            ui.set_next_item_width(150.0);
+            ui.slider_config("##fov_weight", 0.0, 10.0)
+                .display_format("%.1f")
+                .build(&mut aimbot_config.fov_weight);
+            
+            ui.text("Distance Weight:");
+            ui.same_line();
+            ui.set_next_item_width(150.0);
+            ui.slider_config("##distance_weight", 0.0, 10.0)
+                .display_format("%.1f")
+                .build(&mut aimbot_config.distance_weight);
+            
+            ui.text("Health Weight:");
+            ui.same_line();
+            ui.set_next_item_width(150.0);
+            ui.slider_config("##health_weight", 0.0, 10.0)
+                .display_format("%.1f")
+                .build(&mut aimbot_config.health_weight);
+        }
+        
+        if aimbot_config.enabled && theme.styled_collapsing_header(ui, "Humanization & Anti-Detection", false) {
+            ui.checkbox("Enable Humanization", &mut aimbot_config.humanization_enabled);
+            
+            if aimbot_config.humanization_enabled {
+                ui.text("Reaction Time:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##reaction_time", 0.01, 1.0)
+                    .display_format("%.3fs")
+                    .build(&mut aimbot_config.reaction_time);
+                
+                ui.checkbox("Micro Corrections", &mut aimbot_config.micro_corrections);
+                
+                ui.text("Overshoot Chance:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##overshoot_chance", 0.0, 1.0)
+                    .display_format("%.1f%%")
+                    .build(&mut aimbot_config.overshoot_chance);
+            }
+            
+            ui.separator();
+            ui.checkbox("Legit Mode", &mut aimbot_config.legit_mode);
+            
+            if aimbot_config.legit_mode {
+                ui.text("Miss Chance:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##miss_chance", 0.0, 0.5)
+                    .display_format("%.1f%%")
+                    .build(&mut aimbot_config.miss_chance);
+                
+                ui.text("Max Consecutive Headshots:");
+                ui.same_line();
+                ui.set_next_item_width(150.0);
+                ui.slider_config("##max_headshots", 1, 20)
+                    .build(&mut aimbot_config.max_consecutive_headshots);
+                
+                ui.checkbox("Randomize Timing", &mut aimbot_config.randomize_timing);
+            }
+        }
+        
+        if aimbot_config.enabled && theme.styled_collapsing_header(ui, "Auto-Shooting", false) {
+            ui.checkbox("Auto Shoot", &mut aimbot_config.auto_shoot);
+            
+            if aimbot_config.auto_shoot {
+                ui.text("Shot Delay:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##shot_delay", 10, 500)
+                    .display_format("%dms")
+                    .build(&mut aimbot_config.shot_delay);
+                
+                ui.text("Shot Duration:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##shot_duration", 50, 1000)
+                    .display_format("%dms")
+                    .build(&mut aimbot_config.shot_duration);
+                
+                ui.text("Acquisition Delay:");
+                ui.same_line();
+                ui.set_next_item_width(200.0);
+                ui.slider_config("##acquisition_delay", 0, 500)
+                    .display_format("%dms")
+                    .build(&mut aimbot_config.acquisition_delay);
+            }
+        }
+        
+        if aimbot_config.enabled && theme.styled_collapsing_header(ui, "Advanced Features", false) {
+            ui.checkbox("Silent Aim", &mut aimbot_config.silent_aim);
+            
+            if aimbot_config.silent_aim {
+                ui.text("Silent FOV:");
+                ui.same_line();
+                ui.set_next_item_width(150.0);
+                ui.slider_config("##silent_fov", 0.1, 10.0)
+                    .display_format("%.1f°")
+                    .build(&mut aimbot_config.silent_fov);
+            }
+            
+            ui.checkbox("Bone Scan", &mut aimbot_config.bone_scan);
+            ui.checkbox("Auto Penetration", &mut aimbot_config.auto_penetration);
+            
+            if aimbot_config.auto_penetration {
+                ui.text("Min Damage:");
+                ui.same_line();
+                ui.set_next_item_width(150.0);
+                ui.slider_config("##min_damage", 1.0, 100.0)
+                    .display_format("%.0f HP")
+                    .build(&mut aimbot_config.min_damage);
+            }
+            
+            ui.separator();
+            ui.checkbox("RCS Integration", &mut aimbot_config.rcs_integration);
+            
+            if aimbot_config.rcs_integration {
+                ui.text("RCS Factor:");
+                ui.same_line();
+                ui.set_next_item_width(150.0);
+                ui.slider_config("##rcs_factor", 0.0, 2.0)
+                    .display_format("%.1f")
+                    .build(&mut aimbot_config.rcs_factor);
+            }
+            
+            ui.checkbox("Dynamic FOV", &mut aimbot_config.dynamic_fov);
+            
+            if aimbot_config.dynamic_fov {
+                ui.text("FOV Min:");
+                ui.same_line();
+                ui.set_next_item_width(100.0);
+                ui.slider_config("##fov_min", 0.1, 10.0)
+                    .display_format("%.1f°")
+                    .build(&mut aimbot_config.fov_min);
+                
+                ui.same_line();
+                ui.text("Max:");
+                ui.same_line();
+                ui.set_next_item_width(100.0);
+                ui.slider_config("##fov_max", 1.0, 50.0)
+                    .display_format("%.1f°")
+                    .build(&mut aimbot_config.fov_max);
+            }
+        }
+        
+        // Profile Management
+        ui.separator();
+        ui.spacing();
+        ui.text("Profile Management:");
+        
+        if theme.styled_button(ui, "Load Legit Profile", [120.0, 0.0], ButtonType::Success) {
+            *aimbot_config = AimbotProfile::legit_profile().config;
+        }
+        
+        ui.same_line();
+        if theme.styled_button(ui, "Load Rage Profile", [120.0, 0.0], ButtonType::Warning) {
+            *aimbot_config = AimbotProfile::rage_profile().config;
+        }
+        
+        ui.same_line();
+        if theme.styled_button(ui, "Load Semi-Rage", [120.0, 0.0], ButtonType::Primary) {
+            *aimbot_config = AimbotProfile::semi_rage_profile().config;
+        }
+    }
+    
+    /// Renders miscellaneous features settings
+    fn render_misc_features_settings(&mut self, ui: &imgui::Ui) {
+        use crate::ui::{ModernTheme, StatusType};
+        
+        let theme = ModernTheme::new();
+        
+        // Anti-Flash
+        if theme.styled_collapsing_header(ui, "Anti-Flash", true) {
+            theme.status_indicator(ui, "Anti-Flash Protection", StatusType::Inactive);
+            ui.text("Protection Level: 80%");
+            ui.text("Status: Not implemented in UI");
+        }
+        
+        // Speed Enhancement
+        if theme.styled_collapsing_header(ui, "Movement Enhancement", false) {
+            theme.status_indicator(ui, "Speed Hack", StatusType::Inactive);
+            theme.status_indicator(ui, "Bunny Hop", StatusType::Inactive);
+            theme.status_indicator(ui, "Auto Strafe", StatusType::Inactive);
+            ui.text("Status: Not implemented in UI");
+        }
+        
+        // Weapon Enhancement
+        if theme.styled_collapsing_header(ui, "Weapon Enhancement", false) {
+            theme.status_indicator(ui, "No Recoil", StatusType::Inactive);
+            theme.status_indicator(ui, "No Spread", StatusType::Inactive);
+            theme.status_indicator(ui, "Auto Pistol", StatusType::Inactive);
+            ui.text("Status: Not implemented in UI");
+        }
+        
+        // Network Features
+        if theme.styled_collapsing_header(ui, "Network Features", false) {
+            theme.status_indicator(ui, "Fake Lag", StatusType::Inactive);
+            theme.status_indicator(ui, "Backtrack", StatusType::Inactive);
+            ui.text("Status: Not implemented in UI");
+        }
+        
+        // Information
+        ui.separator();
+        ui.spacing();
+        let _style = ui.push_style_color(imgui::StyleColor::Text, theme.warning_color);
+        ui.text("⚠️ Note: Miscellaneous features are implemented in code");
+        ui.text("but not yet exposed in the UI. They can be configured");
+        ui.text("programmatically through the settings system.");
     }
 }

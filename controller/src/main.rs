@@ -34,6 +34,12 @@ use cs2::{
 use enhancements::{
     Enhancement,
     GrenadeHelper,
+    // New enhanced features
+    AdvancedAimbot,
+    EnhancedTriggerBot, 
+    AdvancedESP,
+    AdvancedBhop,
+    MiscFeatures,
 };
 use imgui::{
     Condition,
@@ -82,6 +88,7 @@ mod enhancements;
 mod math;
 mod settings;
 mod security;
+mod ui;
 mod utils;
 mod view;
 mod winver;
@@ -556,6 +563,12 @@ fn real_main(args: &AppArgs) -> anyhow::Result<()> {
             Rc::new(RefCell::new(TriggerBot::new())),
             Rc::new(RefCell::new(GrenadeHelper::new())),
             Rc::new(RefCell::new(SniperCrosshair::new())),
+            // New advanced enhancements
+            Rc::new(RefCell::new(AdvancedAimbot::new())),
+            Rc::new(RefCell::new(EnhancedTriggerBot::new())),
+            Rc::new(RefCell::new(AdvancedESP::new())),
+            Rc::new(RefCell::new(AdvancedBhop::new())),
+            Rc::new(RefCell::new(MiscFeatures::new())),
         ],
 
         last_total_read_calls: 0,
