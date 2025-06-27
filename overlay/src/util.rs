@@ -1,3 +1,4 @@
+#[cfg(windows)]
 use windows::{
     core::PCWSTR,
     Win32::{
@@ -10,6 +11,7 @@ use windows::{
     },
 };
 
+#[cfg(windows)]
 pub fn to_wide_chars(s: &str) -> Vec<u16> {
     use std::{
         ffi::OsStr,
@@ -22,6 +24,7 @@ pub fn to_wide_chars(s: &str) -> Vec<u16> {
         .collect::<Vec<_>>()
 }
 
+#[cfg(windows)]
 pub fn show_error_message(title: &str, message: &str) {
     let title_wide = to_wide_chars(title);
     let message_wide = to_wide_chars(message);
@@ -34,4 +37,9 @@ pub fn show_error_message(title: &str, message: &str) {
             MB_ICONERROR | MB_OK,
         );
     }
+}
+
+#[cfg(not(windows))]
+pub fn show_error_message(title: &str, message: &str) {
+    eprintln!("{}: {}", title, message);
 }
