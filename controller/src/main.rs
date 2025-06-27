@@ -79,7 +79,9 @@ use crate::{
 
 mod dialog;
 mod enhancements;
+mod math;
 mod settings;
+mod security;
 mod utils;
 mod view;
 mod winver;

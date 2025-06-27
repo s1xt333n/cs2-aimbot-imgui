@@ -284,6 +284,9 @@ pub struct AppSettings {
     pub grenade_helper: GrenadeSettings,
 
     #[serde(default)]
+    pub aimbot_config: AimbotConfig,
+
+    #[serde(default)]
     pub imgui: Option<String>,
 }
 

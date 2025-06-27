@@ -9,3 +9,6 @@ pub use config::*;
 
 mod esp;
 pub use esp::*;
+
+mod aimbot_config;
+pub use aimbot_config::*;
